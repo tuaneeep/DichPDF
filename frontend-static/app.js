@@ -1,5 +1,3 @@
-import { CONFIG } from './config.js';
-
 const fileInput = document.getElementById('file-input');
 const selectBtn = document.getElementById('select-btn');
 const translateBtn = document.getElementById('translate-btn');
@@ -14,6 +12,11 @@ const originalPreview = document.getElementById('original-preview');
 const translatedPreview = document.getElementById('translated-preview');
 
 let selectedFile = null;
+
+const API_BASE_URL =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:41000'
+    : '';
 
 function updateProgress(message, percent) {
   statusText.textContent = message;
@@ -97,7 +100,7 @@ translateBtn.addEventListener('click', async () => {
     formData.append('file', selectedFile);
 
     updateProgress('Đang gửi file...', 10);
-    const uploadResponse = await fetch(`${CONFIG.API_BASE_URL}/api/v1/uploads`, {
+    const uploadResponse = await fetch(`${API_BASE_URL}/api/v1/uploads`, {
       method: 'POST',
       body: formData,
     });
@@ -114,7 +117,7 @@ translateBtn.addEventListener('click', async () => {
     const upload = uploadPayload.data;
     updateProgress('Đang khởi tạo job...', 20);
 
-    const jobResponse = await fetch(`${CONFIG.API_BASE_URL}/api/v1/jobs`, {
+    const jobResponse = await fetch(`${API_BASE_URL}/api/v1/jobs`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -141,7 +144,7 @@ translateBtn.addEventListener('click', async () => {
 
     let detail = null;
     for (let attempt = 0; attempt < 120; attempt += 1) {
-      const detailResponse = await fetch(`${CONFIG.API_BASE_URL}/api/v1/jobs/${encodeURIComponent(jobId)}`);
+      const detailResponse = await fetch(`${API_BASE_URL}/api/v1/jobs/${encodeURIComponent(jobId)}`);
       if (!detailResponse.ok) {
         throw new Error(`Không thể đọc trạng thái job: ${detailResponse.status}`);
       }
@@ -167,7 +170,7 @@ translateBtn.addEventListener('click', async () => {
       throw new Error('Job vẫn chưa hoàn tất sau thời gian chờ.');
     }
 
-    const pdfUrl = `${CONFIG.API_BASE_URL}/api/v1/jobs/${encodeURIComponent(jobId)}/pdf`;
+    const pdfUrl = `${API_BASE_URL}/api/v1/jobs/${encodeURIComponent(jobId)}/pdf`;
     renderRemotePreview(pdfUrl, translatedPreview);
     downloadLink.href = pdfUrl;
     downloadLink.download = `translated-${selectedFile.name}`;

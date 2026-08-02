@@ -643,15 +643,21 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
         
         for block in page_dict.get("blocks", []):
             if block.get("type") == 0:  # Text block
+                block_sizes = [
+                    span.get("size", 10)
+                    for line in block.get("lines", [])
+                    for span in line.get("spans", [])
+                    if span.get("text", "").strip()
+                ]
+                block_font_size = max(block_sizes) if block_sizes else 10
                 for line in block.get("lines", []):
                     line_text = "".join([span.get("text", "") for span in line.get("spans", [])]).strip()
                     if line_text and len(line_text) > 1:
                         bbox = fitz.Rect(line.get("bbox"))
-                        font_size = line["spans"][0]["size"] if line.get("spans") else 10
                         text_blocks.append({
                             "text": line_text,
                             "bbox": bbox,
-                            "size": font_size
+                            "size": block_font_size
                         })
                         
         if not text_blocks:
@@ -678,33 +684,26 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
                 min(rect.x1, bbox.x1 + 2.0),
                 min(rect.y1, bbox.y1 + vertical_padding),
             )
-            fitted_shape = None
-            fitted_size = None
-            start_size = max(6.0, b["size"] * 0.85)
-            for candidate_size in [start_size - step * 0.5 for step in range(10)]:
-                if candidate_size < 4.5:
-                    break
-                shape = page.new_shape()
-                result = shape.insert_textbox(
-                    text_box,
+            page.draw_rect(bbox, color=None, fill=(1, 1, 1), overlay=True)
+            shape = page.new_shape()
+            result = shape.insert_textbox(
+                text_box,
+                trans,
+                fontsize=b["size"],
+                fontname=font_name,
+                color=(0, 0, 0),
+                align=0,
+            )
+            if result < 0:
+                shape.insert_text(
+                    (text_box.x0, max(text_box.y0 + b["size"], bbox.y1)),
                     trans,
-                    fontsize=candidate_size,
+                    fontsize=b["size"],
                     fontname=font_name,
                     color=(0, 0, 0),
-                    align=0,
                 )
-                if result >= 0:
-                    fitted_shape = shape
-                    fitted_size = candidate_size
-                    break
-
-            if fitted_shape is None:
-                logger.warning("Keeping original because translation does not fit: %r", trans[:100])
-                continue
-
-            page.draw_rect(bbox, color=None, fill=(1, 1, 1), overlay=True)
-            fitted_shape.commit(overlay=True)
-            logger.debug("Inserted translation at %.1fpt", fitted_size)
+            shape.commit(overlay=True)
+            logger.debug("Inserted translation at original paragraph size %.1fpt", b["size"])
                 
     doc.save(output_pdf)
     doc.close()
