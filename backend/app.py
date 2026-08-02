@@ -528,7 +528,7 @@ def _google_translate_chunk(text: str, target_lang: str) -> str:
         try:
             response = requests.post(
                 GOOGLE_TRANSLATE_URL,
-                params={"client": "gtx", "sl": "auto", "tl": target_lang, "dt": "t"},
+                params={"client": "gtx", "sl": "en", "tl": target_lang, "dt": "t"},
                 data={"q": text},
                 timeout=30,
             )
@@ -651,6 +651,33 @@ def _is_italic_symbol_line(line: Dict[str, Any], text: str) -> bool:
     return bool(math_symbols or digits) and len(letters) <= 8
 
 
+def _is_italic_span(span: Dict[str, Any]) -> bool:
+    return (
+        "italic" in str(span.get("font", "")).lower()
+        or "oblique" in str(span.get("font", "")).lower()
+        or int(span.get("flags", 0)) & 2
+    )
+
+
+def _should_protect_inline_span(span: Dict[str, Any]) -> bool:
+    text = span.get("text", "").strip()
+    if not text or not _is_italic_span(span):
+        return False
+    letters = re.findall(r"[A-Za-zÀ-ỹ]", text)
+    digits = re.findall(r"\d", text)
+    math_symbols = re.findall(r"[=+\-*/^√∑∫∞≈≠≤≥±×÷%<>()[\]{}|_,.;:]", text)
+    if len(text) <= 3:
+        return True
+    return bool(digits or math_symbols) and len(letters) <= 8
+
+
+def _restore_protected_terms(text: str, protected_terms: Dict[str, str]) -> str:
+    restored = text
+    for marker, original in protected_terms.items():
+        restored = restored.replace(marker, original)
+    return restored
+
+
 def translate_texts_with_provider(
     texts: List[str], target_lang: str, api_key: str, provider: str = "google_translate",
     groq_api_keys: Optional[List[str]] = None,
@@ -688,7 +715,8 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
             except Exception as font_error:
                 logger.warning("Could not load Unicode font: %s", font_error)
         
-        # Get page blocks from PyMuPDF or MinerU
+        # Get page paragraphs from PyMuPDF blocks. Translating whole blocks
+        # preserves sentence context better than translating visual lines.
         text_blocks = []
         page_dict = page.get_text("dict")
         
@@ -702,17 +730,36 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
                     if span.get("text", "").strip()
                 ]
                 block_font_size = max(block_sizes) if block_sizes else 10
+                block_rect: Optional[fitz.Rect] = None
+                paragraph_lines: List[str] = []
+                protected_terms: Dict[str, str] = {}
                 for line in block.get("lines", []):
-                    line_text = "".join([span.get("text", "") for span in line.get("spans", [])]).strip()
+                    line_parts: List[str] = []
+                    for span in line.get("spans", []):
+                        span_text = span.get("text", "")
+                        if _should_protect_inline_span(span):
+                            marker = f"QZXKEEP{len(protected_terms):04d}QZX"
+                            protected_terms[marker] = span_text
+                            line_parts.append(marker)
+                        else:
+                            line_parts.append(span_text)
+                    line_text = "".join(line_parts).strip()
                     if line_text and len(line_text) > 1:
-                        bbox = fitz.Rect(line.get("bbox"))
-                        text_blocks.append({
-                            "block_id": block_id,
-                            "text": line_text,
-                            "bbox": bbox,
-                            "size": block_font_size,
-                            "preserve": _is_italic_symbol_line(line, line_text),
-                        })
+                        paragraph_lines.append(line_text)
+                        line_rect = fitz.Rect(line.get("bbox"))
+                        block_rect = line_rect if block_rect is None else block_rect | line_rect
+                paragraph_text = " ".join(paragraph_lines).strip()
+                if paragraph_text and block_rect is not None:
+                    text_blocks.append({
+                        "block_id": block_id,
+                        "text": paragraph_text,
+                        "bbox": block_rect,
+                        "size": block_font_size,
+                        "protected_terms": protected_terms,
+                        "preserve": _should_preserve_without_translation(
+                            _restore_protected_terms(paragraph_text, protected_terms)
+                        ),
+                    })
                 block_id += 1
                         
         if not text_blocks:
@@ -724,6 +771,10 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
         for index, b in enumerate(text_blocks):
             if b.get("preserve"):
                 translated_strings[index] = b["text"]
+            translated_strings[index] = _restore_protected_terms(
+                translated_strings[index],
+                b.get("protected_terms", {}),
+            )
 
         block_font_sizes: Dict[int, float] = {}
         for current_block_id in {b["block_id"] for b in text_blocks}:
@@ -735,14 +786,15 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
             if not group:
                 continue
             base_size = min(b["size"] for b, _ in group)
-            fitted_size = max(4.5, base_size)
-            for candidate_size in [base_size - step * 0.5 for step in range(18)]:
-                if candidate_size < 4.5:
+            min_size = 3.5
+            fitted_size = min_size
+            for candidate_size in [base_size - step * 0.5 for step in range(32)]:
+                if candidate_size < min_size:
                     break
                 all_fit = True
                 for b, trans in group:
                     bbox = fitz.Rect(b["bbox"])
-                    vertical_padding = max(2.0, candidate_size * 0.35)
+                    vertical_padding = max(2.0, candidate_size * 0.25)
                     text_box = fitz.Rect(
                         max(rect.x0, bbox.x0 - 1.0),
                         max(rect.y0, bbox.y0 - vertical_padding),
@@ -772,12 +824,8 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
                 continue
                 
             bbox = fitz.Rect(b["bbox"])
-            # PDF line boxes are often exactly one glyph high. Add a little
-            # vertical room, then test progressively smaller fonts on an
-            # uncommitted Shape. The original is erased only after a fit is
-            # confirmed, preventing blank pages when insert_textbox returns < 0.
             paragraph_size = block_font_sizes.get(b["block_id"], b["size"])
-            vertical_padding = max(2.0, paragraph_size * 0.35)
+            vertical_padding = max(2.0, paragraph_size * 0.25)
             text_box = fitz.Rect(
                 max(rect.x0, bbox.x0 - 1.0),
                 max(rect.y0, bbox.y0 - vertical_padding),
