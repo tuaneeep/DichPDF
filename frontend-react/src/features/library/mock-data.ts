@@ -9,7 +9,7 @@ const defaultArtifacts: LibraryBookArtifact[] = [
 function buildBookDetail(index: number, pages: number, status: LibraryBook['status']): LibraryBook['detail'] {
   return {
     sourceLanguage: '英文',
-    targetLanguage: '中文',
+    targetLanguage: 'Tiếng Việt',
     workflow: pages > 500 ? 'book' : 'paper',
     ocrProvider: pages > 300 ? 'PaddleOCR' : 'MinerU',
     translationEngine: 'DeepSeek',

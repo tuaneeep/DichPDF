@@ -282,7 +282,7 @@ def run_final_untranslated_recovery_stage(
 ) -> dict[str, int]:
     target_language_name = str(
         getattr(translation_context, "target_language_name", "") if translation_context is not None else ""
-    ) or "简体中文"
+    ) or "tiếng Việt"
     blocking_before = len(blocking_untranslated_items(page_payloads))
     if blocking_before <= 0:
         return {

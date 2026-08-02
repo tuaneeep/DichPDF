@@ -1,0 +1,9 @@
+{
+  "name": "ai-pdf-translator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "uvicorn backend.app:app --host 127.0.0.1 --port 41000"
+  },
+  "description": "Frontend static app for translating English PDFs to Vietnamese while preserving layout as much as possible."
+}

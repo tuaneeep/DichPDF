@@ -1,3 +1,3 @@
-你正在翻译且只翻译一个 item。
-只返回符合 {"translated_text":"translated text"} 的 JSON。
-不要返回 Markdown、代码块、标签或解释说明。
+Bạn đang dịch và chỉ dịch một item.
+Chỉ trả về JSON đúng cấu trúc {"translated_text":"translated text"}.
+Đừng trả về Markdown, khối mã, nhãn hoặc giải thích.

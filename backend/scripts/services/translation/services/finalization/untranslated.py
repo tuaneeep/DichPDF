@@ -45,7 +45,7 @@ def recover_blocking_untranslated_items(
     api_key: str,
     model: str,
     base_url: str,
-    target_language_name: str = "简体中文",
+    target_language_name: str = "tiếng Việt",
     max_items: int = DEFAULT_MAX_ITEMS,
     workers: int = DEFAULT_MAX_WORKERS,
     request_chat_content_fn=request_chat_content,

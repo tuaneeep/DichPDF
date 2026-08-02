@@ -82,16 +82,16 @@ def cache_key_for_item(
     base_url: str,
     domain_guidance: str = "",
     mode: str = "fast",
-    target_lang: str = "zh-CN",
-    target_language_name: str = "简体中文",
+    target_lang: str = "vi-VN",
+    target_language_name: str = "tiếng Việt",
 ) -> str:
     payload = {
         "model": model.strip(),
         "base_url": normalize_base_url(base_url),
         "domain_guidance": (domain_guidance or "").strip(),
         "mode": mode.strip() or "fast",
-        "target_lang": (target_lang or "zh-CN").strip() or "zh-CN",
-        "target_language_name": (target_language_name or "简体中文").strip() or "简体中文",
+        "target_lang": (target_lang or "vi-VN").strip() or "vi-VN",
+        "target_language_name": (target_language_name or "tiếng Việt").strip() or "tiếng Việt",
         "prompt_hash": _prompt_hash(mode=mode),
         "translation_protocol_version": TRANSLATION_PROTOCOL_VERSION,
         "translation_policy_version": TRANSLATION_POLICY_VERSION,
@@ -179,8 +179,8 @@ def load_cached_translation(
     base_url: str,
     domain_guidance: str = "",
     mode: str = "fast",
-    target_lang: str = "zh-CN",
-    target_language_name: str = "简体中文",
+    target_lang: str = "vi-VN",
+    target_language_name: str = "tiếng Việt",
 ) -> dict[str, str]:
     cache_key = cache_key_for_item(
         item,
@@ -227,8 +227,8 @@ def store_cached_translation(
     base_url: str,
     domain_guidance: str = "",
     mode: str = "fast",
-    target_lang: str = "zh-CN",
-    target_language_name: str = "简体中文",
+    target_lang: str = "vi-VN",
+    target_language_name: str = "tiếng Việt",
 ) -> None:
     decision = str(translation_result.get("decision", "translate") or "translate").strip() or "translate"
     translated_text = str(translation_result.get("translated_text", "") or "").strip()
@@ -265,8 +265,8 @@ def split_cached_batch(
     base_url: str,
     domain_guidance: str = "",
     mode: str = "fast",
-    target_lang: str = "zh-CN",
-    target_language_name: str = "简体中文",
+    target_lang: str = "vi-VN",
+    target_language_name: str = "tiếng Việt",
 ) -> tuple[dict[str, dict[str, str]], list[dict]]:
     cached: dict[str, dict[str, str]] = {}
     missing: list[dict] = []
@@ -295,8 +295,8 @@ def store_cached_batch(
     base_url: str,
     domain_guidance: str = "",
     mode: str = "fast",
-    target_lang: str = "zh-CN",
-    target_language_name: str = "简体中文",
+    target_lang: str = "vi-VN",
+    target_language_name: str = "tiếng Việt",
 ) -> None:
     for item in batch:
         item_id = item.get("item_id", "")

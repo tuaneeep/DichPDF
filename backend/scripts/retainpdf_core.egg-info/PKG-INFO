@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: retainpdf-core
+Version: 4.1.6
+Summary: RetainPDF Python pipeline core
+Requires-Python: <3.12,>=3.10
+Requires-Dist: Pillow==10.4.0
+Requires-Dist: PyMuPDF==1.26.5
+Requires-Dist: pikepdf==7.2.0
+Requires-Dist: requests==2.32.5
+Requires-Dist: urllib3==2.5.0
+Provides-Extra: test
+Requires-Dist: pytest==9.0.3; extra == "test"

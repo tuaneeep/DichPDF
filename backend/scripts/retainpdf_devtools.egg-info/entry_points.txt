@@ -1,0 +1,20 @@
+[console_scripts]
+retainpdf-backfill-typography-memory = devtools.backfill_typography_memory:main
+retainpdf-benchmark-source-cleanup = devtools.benchmark_source_cleanup:main
+retainpdf-check-pipeline-architecture = devtools.check_pipeline_architecture:main
+retainpdf-check-stage-specs = devtools.check_stage_specs_contract:main
+retainpdf-count-code = devtools.count_code:main
+retainpdf-export-layout-docx = devtools.word_export.cli:main
+retainpdf-extract-pipeline-requirements = devtools.extract_pipeline_requirements:main
+retainpdf-inspect-translation-repair-candidates = devtools.inspect_translation_repair_candidates:main
+retainpdf-job-debug = devtools.job_debug_runner:main
+retainpdf-paddle-probe = devtools.paddle_probe:main
+retainpdf-promptfoo-capture-case = devtools.promptfoo.capture_case:main
+retainpdf-promptfoo-run-eval = devtools.promptfoo.run_eval:main
+retainpdf-promptfoo-scan-drift = devtools.promptfoo.scan_drift:main
+retainpdf-replay-translation-item = devtools.replay_translation_item:main
+retainpdf-run-golden-flow = devtools.run_golden_flow:main
+retainpdf-sync-python-requirements = devtools.sync_python_requirements:main
+retainpdf-translation-debug-api = devtools.translation_debug_api:main
+retainpdf-translation-repair = devtools.translation_repair_runner:main
+retainpdf-verify-bbox-text-strip-parallel = devtools.verify_bbox_text_strip_parallel:main

@@ -1,12 +1,12 @@
-请将每个 source_text 翻译成适合科研论文排版的{target_language_name}，同时保持原意、术语精度和版面友好性。
-优先使用自然的{target_language_name}学术表达，不要机械照搬原文语序。
-在不损失信息和技术精度的前提下，优先采用更凝练、更自然的{target_language_name}措辞。
-译文长度在可能时尽量接近原文，不要添加冗余解释。
-不要翻译占位符，不要改写代码、命令、配置、文件路径、API 字段、变量名、版本号和字面量示例。
-如果某个 item 混合了说明文字和字面量，只翻译说明文字，字面量部分逐字保留。
-如果某个 item 只是明显损坏的极短 OCR 片段，且少于 4 个拉丁字母，则保持原样，不要借上下文扩写。
-但这个规则不适用于正常英文虚词，例如 “and”“or”“the”。
-如果提供了 style_hint，请把它视为块级风格约束，但仍然只能翻译当前 source_text 本身。
-如果 source_text 本身不完整、被截断或突然结束，译文也应保持同等程度的不完整，不要自行补全。
-不要添加 source_text 中不存在的内容。
-如果提供了 continuation_group、context_before、context_after，只能用于术语消歧和句法顺滑，最终返回内容仍然只能覆盖当前 item_id 对应的 source_text。
+Hãy dịch từng source_text sang {target_language_name} phù hợp cho bố cục bài báo học thuật, đồng thời giữ nguyên ý nghĩa, độ chính xác thuật ngữ và tính thân thiện với bố cục.
+Ưu tiên dùng cách diễn đạt {target_language_name} tự nhiên trong học thuật, đừng chép nguyên trật tự câu gốc.
+Trong điều kiện không làm mất thông tin và độ chính xác kỹ thuật, ưu tiên cách diễn đạt {target_language_name} ngắn gọn, tự nhiên hơn.
+Độ dài bản dịch nên gần với bản gốc khi có thể, đừng thêm giải thích thừa.
+Đừng dịch placeholder, đừng sửa đổi mã, lệnh, cấu hình, đường dẫn tệp, trường API, tên biến, số phiên bản và ví dụ literal.
+Nếu một item kết hợp chú thích và literal, chỉ dịch chú thích, phần literal giữ nguyên từng chữ.
+Nếu một item chỉ là đoạn OCR bị hỏng rất ngắn và có dưới 4 ký tự Latin, hãy giữ nguyên, đừng dùng ngữ cảnh để mở rộng.
+Tuy nhiên quy tắc này không áp dụng cho các từ tiếng Anh bình thường như “and”, “or”, “the”.
+Nếu có style_hint, hãy coi đó là ràng buộc phong cách ở cấp khối, nhưng vẫn chỉ được dịch chính source_text hiện tại.
+Nếu source_text không hoàn chỉnh, bị cắt ngắn hoặc kết thúc đột ngột, bản dịch cũng nên giữ mức độ không hoàn chỉnh tương tự, đừng tự bổ sung.
+Đừng thêm nội dung không có trong source_text.
+Nếu có continuation_group, context_before, context_after, chỉ được dùng để làm rõ thuật ngữ và làm câu mượt hơn; cuối cùng nội dung trả về vẫn chỉ được phủ lên source_text tương ứng với item_id hiện tại.

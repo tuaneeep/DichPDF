@@ -433,6 +433,23 @@ def test_toc_prompt_asks_model_to_translate_each_list_line() -> None:
     assert "保留行尾页码" in prompt
 
 
+def test_default_target_language_is_vietnamese() -> None:
+    messages = deepseek_client.build_single_item_fallback_messages(
+        {
+            "item_id": "p001-b001",
+            "protected_source_text": "Keep terminology accurate.",
+            "math_mode": "direct_typst",
+            "metadata": {"structure_role": "body"},
+        },
+        mode="sci",
+        response_style="plain_text",
+    )
+    combined_prompt = "\n".join(message["content"] for message in messages)
+
+    assert "tiếng việt" in combined_prompt.lower()
+    assert "简体中文" not in combined_prompt
+
+
 def test_prompt_builder_can_render_non_default_target_language() -> None:
     messages = deepseek_client.build_single_item_fallback_messages(
         {

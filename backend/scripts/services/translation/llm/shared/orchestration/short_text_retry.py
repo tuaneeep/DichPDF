@@ -43,7 +43,7 @@ def translate_empty_short_text_retry(
     if not should_retry_empty_short_text(item):
         return None
     source = _source_text(item)
-    target_language_name = str(getattr(context, "target_language_name", "") or "简体中文")
+    target_language_name = str(getattr(context, "target_language_name", "") or "tiếng Việt")
     request_fn = request_chat_content_fn or provider_runtime.request_chat_content
     content = request_fn(
         [

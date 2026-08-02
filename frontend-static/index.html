@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EEEP PDF Translator</title>
+    <meta name="description" content="Dịch file PDF tiếng Anh sang tiếng Việt với bố cục được giữ tốt nhất có thể." />
+    <link rel="icon" href="./favicon.jpg" type="image/jpeg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero-card" aria-label="EEEP PDF Translator">
+        <div class="brand-row">
+          <div class="brand-mark">EE</div>
+          <span class="brand-text">EEEP PDF Translator</span>
+        </div>
+
+        <h1>EEEP PDF Translator</h1>
+        <p class="subtitle">
+          Tải PDF tiếng Anh lên, dịch sang tiếng Việt và tải về bản PDF đã được xử lý.
+        </p>
+        <p class="helper-note">
+          Luồng hiện tại dùng backend và MinerU để trích xuất bố cục rồi dịch bằng Google Translate. Mỗi PDF nên dưới 20 trang để xử lý ổn định hơn.
+        </p>
+
+        <label id="drop-zone" class="drop-zone" for="file-input">
+          <input id="file-input" type="file" accept="application/pdf" hidden />
+          <div class="drop-zone__icon">PDF</div>
+          <div class="drop-zone__text">
+            <strong>Kéo thả PDF vào đây</strong>
+            <span>hoặc chọn tệp từ máy tính của bạn</span>
+          </div>
+        </label>
+
+        <div class="actions">
+          <button id="select-btn" class="btn btn--secondary" type="button">Chọn PDF</button>
+          <button id="translate-btn" class="btn btn--primary" type="button" disabled>Dịch PDF</button>
+        </div>
+
+        <div id="file-name" class="file-name">Chưa có tệp PDF nào được chọn.</div>
+
+        <div class="preview-grid">
+          <div class="preview-card">
+            <h2>PDF gốc</h2>
+            <div id="original-preview" class="preview-area">Chưa có PDF gốc để xem.</div>
+          </div>
+          <div class="preview-card">
+            <h2>PDF đã dịch</h2>
+            <div id="translated-preview" class="preview-area">Chưa có PDF đã dịch.</div>
+          </div>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-meta">
+            <span id="status-text">Sẵn sàng</span>
+            <span id="progress-percent">0%</span>
+          </div>
+          <div class="progress-bar" aria-hidden="true">
+            <div id="progress-fill" class="progress-bar__fill"></div>
+          </div>
+          <div id="step-text" class="step-text">Đợi tệp PDF để bắt đầu.</div>
+        </div>
+
+        <a id="download-link" class="download-link" href="#" download="translated.pdf" hidden>
+          Tải PDF đã dịch
+        </a>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

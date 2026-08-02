@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 *.log
+.env
+backend/.env
+frontend-static/config.local.js
 node_modules/
 target/
 
@@ -35,8 +38,15 @@ data/downloads/
 backend/rust_api/target/
 backend/rust_api/auth.local.json
 backend/scripts/.env/*.env
+backend/workspace/
+backend/**/__pycache__/
 frontend/node_modules/
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/Microsoft/
 frontend/desktop_app/src-tauri/target/
+Microsoft/
+tmp/
 untitled.txt
 __MACOSX/
 desktop/linux/
@@ -49,3 +59,4 @@ backend/typst-win32/bin/
 VERSION
 .codex
 .codex/
+config.js

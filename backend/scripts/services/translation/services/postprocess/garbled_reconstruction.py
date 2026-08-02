@@ -171,12 +171,12 @@ def _repair_item_translation(item: dict, *, runtime: GarbledReconstructionRuntim
         {
             "role": "system",
             "content": (
-                "You repair corrupted OCR scientific text blocks and translate them into fluent Simplified Chinese.\n"
+                "You repair corrupted OCR scientific text blocks and translate them into fluent Vietnamese.\n"
                 "The input may contain duplicated fragments, broken line wraps, and fake LaTeX formula noise.\n"
                 "Reconstruct the intended meaning conservatively.\n"
                 "Do not mention that the OCR is corrupted.\n"
                 "Return one JSON object with key translated_text only.\n"
-                "Output plain Chinese text only inside translated_text.\n"
+                "Output plain Vietnamese text only inside translated_text.\n"
                 "Do not emit LaTeX commands like \\\\bf, \\\\mathbf, \\\\mathrm.\n"
                 "If a material or symbol is obvious, keep it in natural scientific notation such as alpha-Al2O3 or α-Al2O3.\n"
             ),

@@ -4,7 +4,7 @@ export type ApiResponse<T> = {
   data: T
 }
 
-export type JobStatusKind = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | string
+export type JobStatusKind = 'queued' | 'running' | 'processing' | 'succeeded' | 'failed' | 'canceled' | string
 
 export type JobProgressView = {
   current?: number | null
@@ -22,7 +22,8 @@ export type JobListItemView = {
   status: JobStatusKind
   stage?: string | null
   stage_detail?: string | null
-  progress?: JobProgressView | null
+  message?: string | null
+  progress?: number | JobProgressView | null
   page_count?: number | null
   source_file_name?: string | null
   cover_url?: string | null

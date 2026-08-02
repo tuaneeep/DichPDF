@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: retainpdf-devtools
+Version: 4.1.6
+Summary: RetainPDF local diagnostics and development tools
+Requires-Python: <3.12,>=3.10
+Requires-Dist: retainpdf-core==4.1.6
+Requires-Dist: python-docx>=1.1.0
+Provides-Extra: test
+Requires-Dist: pytest==9.0.3; extra == "test"
+Provides-Extra: word
+Provides-Extra: promptfoo
+Provides-Extra: bench

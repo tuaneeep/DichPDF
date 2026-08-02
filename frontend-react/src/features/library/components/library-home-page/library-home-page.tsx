@@ -5,6 +5,7 @@ import { LibraryEmptyState } from '../library-empty-state'
 import { LibraryFilterBar } from '../library-filter-bar'
 import { LibrarySidePanel } from '../library-side-panel'
 import { LibraryTopBar } from '../library-top-bar'
+import { LibraryUploadPanel } from '../library-upload-panel'
 import { libraryCopy, librarySortItems, libraryStatusFilterItems } from '../../library-config'
 import type { LibraryBook, LibrarySortKey, LibraryStatusFilterKey } from '../../types'
 
@@ -63,6 +64,9 @@ export function LibraryHomePage({
       />
 
       <section className="relative grid min-h-0 grid-cols-[minmax(0,1fr)]">
+        <div className="col-span-full">
+          <LibraryUploadPanel />
+        </div>
         <LibrarySidePanel
           expanded={sidePanelExpanded}
           items={libraryCopy.sidePanel.items}

@@ -118,6 +118,10 @@ function mapStage(stage: string | null | undefined, status: LibraryBookStatus): 
 }
 
 function buildListSnapshot(item: JobListItemView, activeStage: StageKey): StatusSnapshot {
+  const progObj = typeof item.progress === 'object' && item.progress !== null ? item.progress : null
+  const current = progObj?.current ?? (typeof item.progress === 'number' ? item.progress : undefined)
+  const total = progObj?.total ?? (typeof item.progress === 'number' ? 100 : undefined)
+
   return {
     activeStage,
     selectedStage: activeStage,
@@ -126,10 +130,10 @@ function buildListSnapshot(item: JobListItemView, activeStage: StageKey): Status
     readerReady: item.markdown_ready,
     stageProgress: {
       [activeStage]: {
-        current: item.progress?.current,
-        total: item.progress?.total,
+        current,
+        total,
         text: progressLabel(item),
-        indeterminate: !item.progress?.total,
+        indeterminate: !total,
       },
     },
   }
@@ -139,8 +143,12 @@ function progressLabel(item: JobListItemView) {
   if (item.stage_detail?.trim()) {
     return item.stage_detail
   }
-  if (item.progress?.current != null && item.progress?.total != null) {
-    return `${item.progress.current}/${item.progress.total}`
+  const progObj = typeof item.progress === 'object' && item.progress !== null ? item.progress : null
+  if (progObj?.current != null && progObj?.total != null) {
+    return `${progObj.current}/${progObj.total}`
+  }
+  if (typeof item.progress === 'number') {
+    return `${item.progress}%`
   }
   return item.status === 'queued' ? '等待开始' : item.status === 'succeeded' ? '已完成' : '处理中'
 }

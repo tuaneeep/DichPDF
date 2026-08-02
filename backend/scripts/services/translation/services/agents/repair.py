@@ -49,7 +49,7 @@ class TranslationRepairRequest:
     translated_result: dict[str, str]
     issues: list[TranslationQualityIssue]
     glossary_entries: list[GlossaryEntry] | None = None
-    target_language_name: str = "简体中文"
+    target_language_name: str = "tiếng Việt"
 
 
 @dataclass(frozen=True)

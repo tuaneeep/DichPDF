@@ -1,0 +1,184 @@
+import { CONFIG } from './config.js';
+
+const fileInput = document.getElementById('file-input');
+const selectBtn = document.getElementById('select-btn');
+const translateBtn = document.getElementById('translate-btn');
+const dropZone = document.getElementById('drop-zone');
+const fileNameEl = document.getElementById('file-name');
+const statusText = document.getElementById('status-text');
+const progressPercent = document.getElementById('progress-percent');
+const progressFill = document.getElementById('progress-fill');
+const stepText = document.getElementById('step-text');
+const downloadLink = document.getElementById('download-link');
+const originalPreview = document.getElementById('original-preview');
+const translatedPreview = document.getElementById('translated-preview');
+
+let selectedFile = null;
+
+function updateProgress(message, percent) {
+  statusText.textContent = message;
+  progressPercent.textContent = `${Math.round(percent)}%`;
+  progressFill.style.width = `${Math.round(percent)}%`;
+  stepText.textContent = '';
+}
+
+function setFileDetails(file) {
+  if (!file) {
+    fileNameEl.textContent = 'Chưa có tệp PDF nào được chọn.';
+    translateBtn.disabled = true;
+    return;
+  }
+
+  fileNameEl.textContent = file.name;
+  translateBtn.disabled = false;
+  renderPreview(file, originalPreview);
+}
+
+function renderPreview(file, container) {
+  const objectUrl = URL.createObjectURL(file);
+  container.innerHTML = '';
+  const iframe = document.createElement('iframe');
+  iframe.src = objectUrl;
+  iframe.title = file.name;
+  container.appendChild(iframe);
+}
+
+function renderRemotePreview(url, container) {
+  container.innerHTML = '';
+  const iframe = document.createElement('iframe');
+  iframe.src = url;
+  iframe.title = 'PDF đã dịch';
+  container.appendChild(iframe);
+}
+
+selectBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', (event) => {
+  const [file] = event.target.files || [];
+  if (file && file.type === 'application/pdf') {
+    selectedFile = file;
+    setFileDetails(file);
+    updateProgress('Sẵn sàng.', 0);
+    downloadLink.hidden = true;
+  }
+});
+
+dropZone.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  dropZone.classList.add('is-dragging');
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('is-dragging');
+});
+
+dropZone.addEventListener('drop', (event) => {
+  event.preventDefault();
+  dropZone.classList.remove('is-dragging');
+  const [file] = event.dataTransfer.files || [];
+  if (file && file.type === 'application/pdf') {
+    selectedFile = file;
+    setFileDetails(file);
+    updateProgress('Sẵn sàng.', 0);
+    downloadLink.hidden = true;
+  }
+});
+
+translateBtn.addEventListener('click', async () => {
+  if (!selectedFile) {
+    return;
+  }
+
+  translateBtn.disabled = true;
+  updateProgress('Đang xử lý...', 5);
+
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    updateProgress('Đang gửi file...', 10);
+    const uploadResponse = await fetch(`${CONFIG.API_BASE_URL}/api/v1/uploads`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload thất bại: ${uploadResponse.status}`);
+    }
+
+    const uploadPayload = await uploadResponse.json();
+    if (uploadPayload.code !== 0) {
+      throw new Error(uploadPayload.message || 'Upload thất bại.');
+    }
+
+    const upload = uploadPayload.data;
+    updateProgress('Đang khởi tạo job...', 20);
+
+    const jobResponse = await fetch(`${CONFIG.API_BASE_URL}/api/v1/jobs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        workflow: 'book',
+        source: { upload_id: upload.upload_id },
+        target_lang: 'vi',
+        provider: 'google_translate',
+      }),
+    });
+
+    if (!jobResponse.ok) {
+      throw new Error(`Tạo job thất bại: ${jobResponse.status}`);
+    }
+
+    const jobPayload = await jobResponse.json();
+    if (jobPayload.code !== 0) {
+      throw new Error(jobPayload.message || 'Không thể tạo job.');
+    }
+
+    const jobId = jobPayload.data.job_id;
+    updateProgress('Đang chờ xử lý...', 30);
+
+    let detail = null;
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      const detailResponse = await fetch(`${CONFIG.API_BASE_URL}/api/v1/jobs/${encodeURIComponent(jobId)}`);
+      if (!detailResponse.ok) {
+        throw new Error(`Không thể đọc trạng thái job: ${detailResponse.status}`);
+      }
+
+      const detailPayload = await detailResponse.json();
+      detail = detailPayload.data;
+      if (detail.message) {
+        updateProgress(detail.message, 30 + Math.min(60, attempt * 0.5));
+      }
+
+      if (detail.status === 'succeeded' || detail.output_pdf_ready) {
+        break;
+      }
+
+      if (detail.status === 'failed' || detail.status === 'canceled') {
+        throw new Error(detail.message || 'Job dịch thất bại.');
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    }
+
+    if (!detail || !(detail.status === 'succeeded' || detail.output_pdf_ready)) {
+      throw new Error('Job vẫn chưa hoàn tất sau thời gian chờ.');
+    }
+
+    const pdfUrl = `${CONFIG.API_BASE_URL}/api/v1/jobs/${encodeURIComponent(jobId)}/pdf`;
+    renderRemotePreview(pdfUrl, translatedPreview);
+    downloadLink.href = pdfUrl;
+    downloadLink.download = `translated-${selectedFile.name}`;
+    downloadLink.hidden = false;
+    updateProgress('Hoàn tất.', 100);
+  } catch (error) {
+    console.error(error);
+    translatedPreview.innerHTML =
+      '<div style="padding: 12px; color: #7c2d12;">Không thể hoàn tất. Vui lòng kiểm tra backend và MinerU.</div>';
+    updateProgress('Thất bại.', 0);
+  } finally {
+    translateBtn.disabled = false;
+  }
+});

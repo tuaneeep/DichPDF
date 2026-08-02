@@ -44,7 +44,7 @@ def _is_structured_line_context(*, text_flow: str, semantic_role: str, structure
 @dataclass(frozen=True)
 class TranslationDocumentContext:
     mode: str = "fast"
-    target_language: str = "zh-CN"
+    target_language: str = "vi-VN"
     domain_guidance: str = ""
     rule_guidance: str = ""
     glossary_guidance: str = ""

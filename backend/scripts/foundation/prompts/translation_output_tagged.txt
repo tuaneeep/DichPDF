@@ -1,6 +1,6 @@
-每个 item 返回一个 tagged block，不要返回 JSON 或 Markdown。
-必须使用以下精确格式：
+Mỗi item phải trả về một tagged block, đừng trả về JSON hoặc Markdown.
+Phải dùng đúng định dạng sau:
 {tagged_header}
-translated text
+bản dịch
 <<<END>>>
-每个请求的 item_id 都必须输出一个 block。
+Mỗi item_id trong yêu cầu phải xuất một block.

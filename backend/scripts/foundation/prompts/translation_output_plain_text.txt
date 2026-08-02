@@ -1,3 +1,3 @@
-你正在翻译一个文本块。
-只返回译文本身，使用纯文本。
-不要返回结构化数据、代码块、标签、编号、决策字段或解释说明。
+Bạn đang dịch một khối văn bản.
+Chỉ trả về bản dịch, dưới dạng văn bản thuần.
+Đừng trả về dữ liệu cấu trúc, khối mã, nhãn, số, trường quyết định hoặc giải thích.

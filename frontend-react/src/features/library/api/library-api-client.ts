@@ -76,6 +76,28 @@ export function libraryRequestHeaders() {
   return buildHeaders()
 }
 
+type LibraryApiOptions = {
+  baseUrl?: string
+  apiKey?: string
+}
+
+function buildLibraryRequestHeaders(options: LibraryApiOptions = {}) {
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  const apiKey = options.apiKey?.trim() || libraryApiKey()
+
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey
+  }
+
+  return headers
+}
+
+function buildLibraryApiUrl(path: string, options: LibraryApiOptions = {}) {
+  const base = options.baseUrl?.trim() || libraryApiBase()
+  const normalizedBase = base.replace(/\/+$/, '')
+  return `${normalizedBase}${API_V1_SUFFIX}/${path.replace(/^\/+/, '')}`
+}
+
 function fileNameFromDisposition(disposition: string | null) {
   const utf8Match = disposition?.match(/filename\*=UTF-8''([^;]+)/i)
   if (utf8Match?.[1]) {
@@ -112,6 +134,68 @@ export function getLibraryJob(jobId: string) {
 
 function libraryBookId(jobId: string) {
   return jobId.endsWith('-ocr') ? jobId.slice(0, -4) : jobId
+}
+
+export async function uploadLibraryPdf(file: File, options: LibraryApiOptions = {}) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('developer_mode', 'false')
+
+  const response = await fetch(buildLibraryApiUrl('uploads', options), {
+    method: 'POST',
+    headers: buildLibraryRequestHeaders(options),
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error(`upload failed: ${response.status}`)
+  }
+
+  const payload = (await response.json()) as ApiResponse<{ upload_id: string; filename: string; bytes: number; page_count: number; uploaded_at: string }>
+  if (payload.code !== 0) {
+    throw new Error(payload.message || 'upload failed')
+  }
+
+  return payload.data
+}
+
+export async function createLibraryJob(payload: object, options: LibraryApiOptions = {}) {
+  const response = await fetch(buildLibraryApiUrl('jobs', options), {
+    method: 'POST',
+    headers: {
+      ...buildLibraryRequestHeaders(options),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    throw new Error(`create job failed: ${response.status}`)
+  }
+
+  const result = (await response.json()) as ApiResponse<{ job_id: string; status: string }>
+  if (result.code !== 0) {
+    throw new Error(result.message || 'create job failed')
+  }
+
+  return result.data
+}
+
+export async function getLibraryJobDetail(jobId: string, options: LibraryApiOptions = {}) {
+  const response = await fetch(buildLibraryApiUrl(`jobs/${encodeURIComponent(jobId)}`, options), {
+    headers: buildLibraryRequestHeaders(options),
+  })
+
+  if (!response.ok) {
+    throw new Error(`get job failed: ${response.status}`)
+  }
+
+  const payload = (await response.json()) as ApiResponse<JobDetailView>
+  if (payload.code !== 0) {
+    throw new Error(payload.message || 'get job failed')
+  }
+
+  return payload.data
 }
 
 export async function deleteLibraryBook(jobId: string, options: { force?: boolean } = {}) {
