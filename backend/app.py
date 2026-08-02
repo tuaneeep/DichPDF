@@ -562,6 +562,9 @@ def translate_texts_with_google(texts: List[str], target_lang: str) -> List[str]
     translated = ["" for _ in texts]
     units: List[tuple[int, str]] = []
     for owner, text in enumerate(texts):
+        if _should_preserve_without_translation(text):
+            translated[owner] = text
+            continue
         for chunk in _split_long_text(text, GOOGLE_TRANSLATE_CHUNK_CHARS):
             units.append((owner, chunk))
 
@@ -598,6 +601,29 @@ def translate_texts_with_google(texts: List[str], target_lang: str) -> List[str]
             time.sleep(0.6)
 
     return translated
+
+
+def _should_preserve_without_translation(text: str) -> bool:
+    """Keep formulas, numeric labels, and symbol-heavy fragments out of MT."""
+    stripped = text.strip()
+    if not stripped:
+        return True
+    letters = re.findall(r"[A-Za-zÀ-ỹ]", stripped)
+    digits = re.findall(r"\d", stripped)
+    math_symbols = re.findall(r"[=+\-*/^√∑∫∞≈≠≤≥±×÷%<>()[\]{}|_]", stripped)
+    non_space = re.findall(r"\S", stripped)
+    if not non_space:
+        return True
+    if len(stripped) <= 3 and not letters:
+        return True
+    if math_symbols and digits and len(letters) <= 4:
+        return True
+    if math_symbols and len(letters) <= 2:
+        return True
+    if digits and not letters and len(math_symbols) + len(digits) >= max(1, int(len(non_space) * 0.6)):
+        return True
+    symbol_count = len(non_space) - len(letters) - len(digits)
+    return symbol_count >= max(3, int(len(non_space) * 0.65)) and len(letters) <= 3
 
 
 def translate_texts_with_provider(
