@@ -262,11 +262,6 @@ h1 {
   font-size: 0.95rem;
 }
 
-.profile-links span {
-  font-weight: 700;
-  color: var(--text);
-}
-
 .profile-links a {
   color: var(--primary);
   font-weight: 600;

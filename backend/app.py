@@ -626,6 +626,31 @@ def _should_preserve_without_translation(text: str) -> bool:
     return symbol_count >= max(3, int(len(non_space) * 0.65)) and len(letters) <= 3
 
 
+def _is_italic_symbol_line(line: Dict[str, Any], text: str) -> bool:
+    """Preserve italic math/symbol fragments that MT often corrupts."""
+    spans = line.get("spans", [])
+    if not spans:
+        return False
+    italic_spans = [
+        span for span in spans
+        if span.get("text", "").strip()
+        and (
+            "italic" in str(span.get("font", "")).lower()
+            or "oblique" in str(span.get("font", "")).lower()
+            or int(span.get("flags", 0)) & 2
+        )
+    ]
+    if not italic_spans:
+        return False
+    stripped = text.strip()
+    letters = re.findall(r"[A-Za-zÀ-ỹ]", stripped)
+    digits = re.findall(r"\d", stripped)
+    math_symbols = re.findall(r"[=+\-*/^√∑∫∞≈≠≤≥±×÷%<>()[\]{}|_,.;:]", stripped)
+    if len(stripped) <= 12:
+        return True
+    return bool(math_symbols or digits) and len(letters) <= 8
+
+
 def translate_texts_with_provider(
     texts: List[str], target_lang: str, api_key: str, provider: str = "google_translate",
     groq_api_keys: Optional[List[str]] = None,
@@ -667,6 +692,7 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
         text_blocks = []
         page_dict = page.get_text("dict")
         
+        block_id = 0
         for block in page_dict.get("blocks", []):
             if block.get("type") == 0:  # Text block
                 block_sizes = [
@@ -681,17 +707,64 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
                     if line_text and len(line_text) > 1:
                         bbox = fitz.Rect(line.get("bbox"))
                         text_blocks.append({
+                            "block_id": block_id,
                             "text": line_text,
                             "bbox": bbox,
-                            "size": block_font_size
+                            "size": block_font_size,
+                            "preserve": _is_italic_symbol_line(line, line_text),
                         })
+                block_id += 1
                         
         if not text_blocks:
             continue
             
         # Extract text strings to translate
-        original_strings = [b["text"] for b in text_blocks]
+        original_strings = [b["text"] if not b.get("preserve") else "" for b in text_blocks]
         translated_strings = translate_texts_with_provider(original_strings, target_lang, gemini_key, provider, groq_api_keys)
+        for index, b in enumerate(text_blocks):
+            if b.get("preserve"):
+                translated_strings[index] = b["text"]
+
+        block_font_sizes: Dict[int, float] = {}
+        for current_block_id in {b["block_id"] for b in text_blocks}:
+            group = [
+                (b, trans)
+                for b, trans in zip(text_blocks, translated_strings)
+                if b["block_id"] == current_block_id and trans and trans != b["text"]
+            ]
+            if not group:
+                continue
+            base_size = min(b["size"] for b, _ in group)
+            fitted_size = max(4.5, base_size)
+            for candidate_size in [base_size - step * 0.5 for step in range(18)]:
+                if candidate_size < 4.5:
+                    break
+                all_fit = True
+                for b, trans in group:
+                    bbox = fitz.Rect(b["bbox"])
+                    vertical_padding = max(2.0, candidate_size * 0.35)
+                    text_box = fitz.Rect(
+                        max(rect.x0, bbox.x0 - 1.0),
+                        max(rect.y0, bbox.y0 - vertical_padding),
+                        min(rect.x1, bbox.x1 + 2.0),
+                        min(rect.y1, bbox.y1 + vertical_padding),
+                    )
+                    shape = page.new_shape()
+                    result = shape.insert_textbox(
+                        text_box,
+                        trans,
+                        fontsize=candidate_size,
+                        fontname=font_name,
+                        color=(0, 0, 0),
+                        align=0,
+                    )
+                    if result < 0:
+                        all_fit = False
+                        break
+                if all_fit:
+                    fitted_size = candidate_size
+                    break
+            block_font_sizes[current_block_id] = fitted_size
         
         # Overlay translated strings onto page
         for b, trans in zip(text_blocks, translated_strings):
@@ -703,7 +776,8 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
             # vertical room, then test progressively smaller fonts on an
             # uncommitted Shape. The original is erased only after a fit is
             # confirmed, preventing blank pages when insert_textbox returns < 0.
-            vertical_padding = max(2.0, b["size"] * 0.35)
+            paragraph_size = block_font_sizes.get(b["block_id"], b["size"])
+            vertical_padding = max(2.0, paragraph_size * 0.35)
             text_box = fitz.Rect(
                 max(rect.x0, bbox.x0 - 1.0),
                 max(rect.y0, bbox.y0 - vertical_padding),
@@ -715,21 +789,21 @@ def render_translated_pdf(source_pdf: Path, output_pdf: Path, target_lang: str, 
             result = shape.insert_textbox(
                 text_box,
                 trans,
-                fontsize=b["size"],
+                fontsize=paragraph_size,
                 fontname=font_name,
                 color=(0, 0, 0),
                 align=0,
             )
             if result < 0:
                 shape.insert_text(
-                    (text_box.x0, max(text_box.y0 + b["size"], bbox.y1)),
+                    (text_box.x0, max(text_box.y0 + paragraph_size, bbox.y1)),
                     trans,
-                    fontsize=b["size"],
+                    fontsize=paragraph_size,
                     fontname=font_name,
                     color=(0, 0, 0),
                 )
             shape.commit(overlay=True)
-            logger.debug("Inserted translation at original paragraph size %.1fpt", b["size"])
+            logger.debug("Inserted translation at paragraph size %.1fpt", paragraph_size)
                 
     doc.save(output_pdf)
     doc.close()
